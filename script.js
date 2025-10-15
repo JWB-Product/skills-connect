@@ -1,5 +1,8 @@
 /* Minimal, accessible, weighted quiz for Skills Connect.
-   No external deps. Edit copy below. */
+   Adds 'Not sure' and 'Skip' without affecting scoring. */
+
+// ---- Config
+const READ_ALL_URL = "https://www.skillsconnect.org.uk/find-your-direction/pathways-to-work#list";
 
 // ---- Analytics wrapper (safe if GA not present)
 function sendAnalytics(eventName, params = {}) {
@@ -103,6 +106,7 @@ const OUTCOMES = {
 };
 
 // ---- Questions: six, high-signal, mapped to those outcomes with weights
+// Note: 'Not sure' is added automatically in the UI with zero weight.
 const QUESTIONS = [
   {
     id: "q1",
@@ -173,7 +177,7 @@ const QUESTIONS = [
 
   const quizId = root.getAttribute("data-quiz-id") || "skillsconnect-quiz";
   let stepIndex = 0;
-  const answers = {}; // questionId -> answerId
+  const answers = {}; // questionId -> answerId or "SKIPPED" or "NOT_SURE"
   const scores = {};  // outcomeId -> score
 
   // Skeleton
@@ -182,10 +186,13 @@ const QUESTIONS = [
   const stepWrap = el("div", { class: "sc-step", id: "sc-step" });
   const actions = el("div", { class: "sc-actions" });
   const backBtn = btn("Back", "secondary");
+  const skipBtn = btn("Skip", "secondary");
   const nextBtn = btn("Next", "primary");
+  const readAllBtn = linkBtn("Read about all your options", READ_ALL_URL, "secondary", true);
+
   backBtn.disabled = true;
 
-  actions.append(backBtn, nextBtn);
+  actions.append(backBtn, skipBtn, nextBtn, readAllBtn);
   card.append(progress, stepWrap, actions);
   root.append(card);
 
@@ -205,35 +212,22 @@ const QUESTIONS = [
     const qh = el("h2", { class: "sc-q", id: `label-${q.id}` }, q.text);
     const list = el("ul", { class: "sc-list", role: "list" });
 
+    // Render normal answers
     q.answers.forEach(a => {
-      const li = el("li");
-      const label = el("label", { class: "sc-option" });
-      const input = el("input", {
-        type: "radio",
-        name: q.id,
-        value: a.id,
-        "aria-labelledby": `label-${q.id}`,
-        required: "required"
-      });
-      if (answers[q.id] === a.id) input.checked = true;
-
-      label.append(input, el("span", {}, a.label));
-      li.append(label);
-      list.append(li);
-
-      input.addEventListener("change", () => {
-        answers[q.id] = a.id;
-        nextBtn.disabled = false;
-        sendAnalytics("quiz_answer", { quiz_id: quizId, question_id: q.id, answer_id: a.id });
-      });
+      list.append(renderOption(q, a.id, a.label));
     });
+
+    // Auto-add "Not sure" with zero weight
+    const notSureId = `${q.id}_not_sure`;
+    list.append(renderOption(q, notSureId, "Not sure", /*isNotSure*/ true));
 
     stepWrap.append(qh, list);
 
     // Buttons state
     backBtn.disabled = stepIndex === 0;
     nextBtn.textContent = stepIndex === QUESTIONS.length - 1 ? "See results" : "Next";
-    nextBtn.disabled = !answers[q.id];
+    // If previously answered (including NOT_SURE), allow Next
+    nextBtn.disabled = !(answers[q.id]);
 
     // Keyboard: Enter moves next if selection present
     stepWrap.addEventListener("keydown", (e) => {
@@ -242,10 +236,45 @@ const QUESTIONS = [
         goNext();
       }
     }, { once: true });
+
+    // Skip handler
+    skipBtn.onclick = () => {
+      answers[q.id] = "SKIPPED";
+      sendAnalytics("quiz_skip", { quiz_id: quizId, question_id: q.id });
+      goNext();
+    };
+  }
+
+  function renderOption(q, answerId, label, isNotSure = false){
+    const li = el("li");
+    const optionLabel = el("label", { class: "sc-option" });
+    const input = el("input", {
+      type: "radio",
+      name: q.id,
+      value: answerId,
+      "aria-labelledby": `label-${q.id}`,
+      required: "required"
+    });
+    if (answers[q.id] === answerId) input.checked = true;
+
+    optionLabel.append(input, el("span", {}, label));
+    li.append(optionLabel);
+
+    input.addEventListener("change", () => {
+      answers[q.id] = answerId;
+      nextBtn.disabled = false;
+      if (isNotSure) {
+        sendAnalytics("quiz_not_sure", { quiz_id: quizId, question_id: q.id });
+      } else {
+        sendAnalytics("quiz_answer", { quiz_id: quizId, question_id: q.id, answer_id: answerId });
+      }
+    });
+
+    return li;
   }
 
   function goNext(){
-    if (!answers[QUESTIONS[stepIndex].id]) return;
+    if (stepIndex < QUESTIONS.length && !answers[QUESTIONS[stepIndex].id]) return;
     stepIndex += 1;
     renderStep();
   }
@@ -258,6 +287,11 @@ const QUESTIONS = [
   nextBtn.addEventListener("click", goNext);
   backBtn.addEventListener("click", goBack);
 
+  // Read all options click tracking
+  readAllBtn.addEventListener("click", () => {
+    sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "footer" });
+  });
+
   renderStep();
 
   function renderResults(){
@@ -266,6 +300,7 @@ const QUESTIONS = [
 
     QUESTIONS.forEach(q => {
       const ansId = answers[q.id];
+      if (!ansId || ansId === "SKIPPED" || ansId.endsWith("_not_sure")) return;
       const ans = q.answers.find(a => a.id === ansId);
       if (!ans) return;
       Object.entries(ans.weights || {}).forEach(([outcome, val]) => {
@@ -277,13 +312,14 @@ const QUESTIONS = [
     const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
     const top = sorted[0];
     const second = sorted[1];
-    const showSecond = second && (top[1] - second[1] <= 2);
+    const showSecond = second && top && (top[1] - second[1] <= 2);
 
     sendAnalytics("quiz_complete", {
       quiz_id: quizId,
       top_outcome: top ? top[0] : null,
       second_outcome: showSecond ? second[0] : null,
-      question_count: QUESTIONS.length
+      question_count: QUESTIONS.length,
+      answered_count: Object.values(answers).filter(v => v && v !== "SKIPPED").length
     });
 
     // Replace UI with results
@@ -291,6 +327,18 @@ const QUESTIONS = [
     stepWrap.replaceChildren();
 
     const results = el("div", { class: "sc-results" });
+
+    // If user skipped or chose Not sure a lot, show a friendly nudge
+    const answeredCount = Object.keys(answers).filter(k => {
+      const v = answers[k];
+      return v && v !== "SKIPPED" && !v.endsWith("_not_sure");
+    }).length;
+
+    if (!top || answeredCount < 2) {
+      const info = el("p", {}, "Not enough answers to prioritise one route. Try reading all your options below.");
+      stepWrap.append(info);
+    }
+
     if (top) results.append(renderResultCard(top[0]));
     if (showSecond) results.append(renderResultCard(second[0]));
 
@@ -300,24 +348,32 @@ const QUESTIONS = [
     const whyList = el("ul");
     Object.entries(answers).forEach(([qid, aid]) => {
       const Q = QUESTIONS.find(q => q.id === qid);
-      const A = Q?.answers.find(a => a.id === aid);
-      if (Q && A) whyList.append(el("li", {}, `${Q.text} — ${A.label}`));
+      if (!Q) return;
+      let label;
+      if (aid === "SKIPPED") label = "Skipped";
+      else if (aid.endsWith("_not_sure")) label = "Not sure";
+      else label = Q.answers.find(a => a.id === aid)?.label;
+      if (Q && label) whyList.append(el("li", {}, `${Q.text} — ${label}`));
     });
     why.append(whySum, whyList);
 
     stepWrap.append(results, why);
 
-    // Actions: retake
+    // Actions: retake + read all
     actions.replaceChildren();
     const retake = btn("Start again", "secondary");
+    const readAll = linkBtn("Read about all your options", READ_ALL_URL, "primary", true);
     retake.addEventListener("click", () => {
       Object.keys(answers).forEach(k => delete answers[k]);
       stepIndex = 0;
-      actions.replaceChildren(backBtn, nextBtn);
+      actions.replaceChildren(backBtn, skipBtn, nextBtn, readAllBtn);
       renderStep();
       sendAnalytics("quiz_restart", { quiz_id: quizId });
     });
-    actions.append(retake);
+    readAll.addEventListener("click", () => {
+      sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "results" });
+    });
+    actions.append(retake, readAll);
   }
 
   function renderResultCard(key){
@@ -335,7 +391,7 @@ const QUESTIONS = [
     return wrap;
   }
 
-  // Small helper to create elements
+  // Small helpers
   function el(tag, attrs = {}, text){
     const node = document.createElement(tag);
     for (const [k,v] of Object.entries(attrs)) {
@@ -349,5 +405,10 @@ const QUESTIONS = [
     const b = el("button", { type:"button", class:`sc-btn sc-btn--${variant}` }, label);
     b.addEventListener("keyup", e => { if (e.key === "Enter" || e.key === " ") b.click(); });
     return b;
+  }
+  function linkBtn(label, href, variant="secondary", newWindow=false){
+    const a = el("a", { href, class:`sc-btn sc-btn--${variant}` }, label);
+    if (newWindow) { a.setAttribute("target","_blank"); a.setAttribute("rel","noopener"); }
+    return a;
   }
 })();
