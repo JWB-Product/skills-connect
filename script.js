@@ -10,78 +10,108 @@ function sendAnalytics(eventName, params = {}) {
   } catch (_) {}
 }
 
-// ---- Quiz content (in JS, not JSON, per your request)
-// Outcomes map directly to your sections.
+// ---- Outcomes: exact titles/copy, only real links
 const OUTCOMES = {
-  earn_now: {
-    title: "Start earning now",
-    summary: "Get into paid work now. Try entry-level jobs or earn while you learn as an apprentice.",
+  direct_employment: {
+    title: "Direct employment",
+    summary:
+      "Some people are ready to go straight into work. They can apply for entry-level jobs that don’t always need lots of qualifications, like retail, hospitality, customer service, or warehouse work. These jobs help them build experience and transferable skills.",
     links: [
-      { text: "Search jobs near you", href: "/skills/jobs" },
-      { text: "Find apprenticeships", href: "/skills/apprenticeships" },
-      { text: "Get advice", href: "/skills/support/advice" }
+      {
+        text: "Entry-level opportunities",
+        href: "https://www.skillsconnect.org.uk/entry-level-opportunities/"
+      }
     ],
     accent: "var(--col12)"
   },
-  learn_first: {
-    title: "Learn first, then work",
-    summary: "Keep learning at college or through higher-level routes, then move into work in that sector.",
+  apprenticeships: {
+    title: "Apprenticeships",
+    summary:
+      "An apprenticeship means learning on the job while also studying towards a qualification.\n\nThey’re paid, so you can earn while you learn. Apprenticeships are available in almost every sector from construction, health and care, digital, business, creative industries, and more.",
     links: [
-      { text: "Explore college courses", href: "/skills/college-courses" },
-      { text: "Graduate routes and schemes", href: "/skills/graduate-routes" },
-      { text: "Get advice", href: "/skills/support/advice" }
+      {
+        text: "Apprenticeship levels",
+        href: "https://www.skillsconnect.org.uk/apprenticeships/#levels"
+      }
     ],
     accent: "var(--col5)"
   },
-  confidence: {
-    title: "Build confidence first",
-    summary: "Short programmes and volunteering can build skills, confidence and experience before you apply.",
-    links: [
-      { text: "Pre-employment programmes", href: "/skills/pre-employment" },
-      { text: "Find volunteering", href: "/skills/volunteering" },
-      { text: "Get advice", href: "/skills/support/advice" }
-    ],
+  pre_employment: {
+    title: "Pre-employment programmes",
+    summary:
+      "These are short programmes designed to help young people build confidence, improve skills like CV writing or interview techniques, and get some work experience. They’re often a stepping stone into apprenticeships or jobs.",
+    links: [],
     accent: "var(--col3)"
   },
-  supported: {
-    title: "Extra support at work",
-    summary: "If you have additional needs, a supported internship combines work with extra help from a job coach.",
+  supported_internships: {
+    title: "Supported internships",
+    summary:
+      "For young people with additional needs, supported internships combine work placements with extra help from a job coach or mentor. They’re designed to make the transition into paid work smoother and more achievable.",
     links: [
-      { text: "How supported internships work", href: "/skills/supported-internships" },
-      { text: "Talk to a careers adviser", href: "/skills/support/advice" }
+      {
+        text: "Guide to supported internships",
+        href: "https://www.skillsconnect.org.uk/find-your-direction/internships/guide-to-supported-internships/"
+      }
     ],
     accent: "var(--col10)"
   },
-  self_employed: {
-    title: "Start your own thing",
-    summary: "Start a business or go freelance. Advice, mentoring and sometimes funding can help you set up.",
+  college_training: {
+    title: "College or further training leading to work",
+    summary:
+      "Some may choose to carry on with a course at college—like a vocational qualification (e.g. plumbing, childcare, health & social care, hairdressing) with a clear route into jobs in that sector.",
+    links: [],
+    accent: "var(--col2)"
+  },
+  volunteering: {
+    title: "Work experience & volunteering",
+    summary:
+      "Although unpaid, volunteering and short work experience placements are a great way to build confidence, skills, and connections. It often makes a young person’s CV stand out to future employers.",
+    links: [],
+    accent: "var(--col6)"
+  },
+  graduate_routes: {
+    title: "Graduate schemes or higher-level routes",
+    summary:
+      "For those who go on to university or higher education, graduate schemes and internships are a route into professional roles with structured training and progression.",
     links: [
-      { text: "Startup guidance", href: "/growth-hub/start-a-business" },
-      { text: "Book a business support session", href: "/growth-hub/book-support" }
+      {
+        text: "Internships",
+        href: "https://www.skillsconnect.org.uk/find-your-direction/internships/"
+      }
     ],
+    accent: "var(--col7)"
+  },
+  self_employed: {
+    title: "Self-employment or starting a business",
+    summary:
+      "Some young people may want to set up their own business or work freelance (common in areas like digital, design, or creative industries). There are schemes that offer advice, mentoring, and sometimes funding to help.",
+    links: [],
     accent: "var(--col8)"
   },
-  help_me: {
-    title: "Get tailored support",
-    summary: "Specialist services can give tailored advice, coaching and links to employers.",
+  employment_support: {
+    title: "Help from employment support services",
+    summary:
+      "There are also specialist services (like Jobcentre Plus Youth Hubs, local council projects, or voluntary organisations) that provide tailored advice, coaching, and links to employers for young people struggling to find the right path.\n\nSkills Connect can also help you find work, improve your CV and prepare for interviews.",
     links: [
-      { text: "Find local support services", href: "/skills/support/services" },
-      { text: "Contact Skills Connect", href: "/skills/support/contact" }
+      {
+        text: "Speak to Skills Connect",
+        href: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/"
+      }
     ],
-    accent: "var(--col2)"
+    accent: "var(--col13)"
   }
 };
 
-// Questions: six, high-signal, mapped to outcomes with weights.
+// ---- Questions: six, high-signal, mapped to those outcomes with weights
 const QUESTIONS = [
   {
     id: "q1",
     text: "What matters most right now?",
     answers: [
-      { id: "q1a1", label: "Getting paid soon", weights: { earn_now: 3 } },
-      { id: "q1a2", label: "Feeling more ready and confident", weights: { confidence: 3 } },
-      { id: "q1a3", label: "Getting a qualification first", weights: { learn_first: 3 } },
-      { id: "q1a4", label: "Extra help at work or on placement", weights: { supported: 3 } },
+      { id: "q1a1", label: "Getting paid soon", weights: { direct_employment: 2, apprenticeships: 2 } },
+      { id: "q1a2", label: "Building confidence first", weights: { pre_employment: 2, volunteering: 1 } },
+      { id: "q1a3", label: "Getting a qualification first", weights: { college_training: 2, graduate_routes: 1 } },
+      { id: "q1a4", label: "Extra help at work or on placement", weights: { supported_internships: 3 } },
       { id: "q1a5", label: "Starting my own thing", weights: { self_employed: 3 } }
     ]
   },
@@ -89,20 +119,19 @@ const QUESTIONS = [
     id: "q2",
     text: "How do you feel about studying in the next 6 to 12 months?",
     answers: [
-      { id: "q2a1", label: "I’d rather work than study", weights: { earn_now: 2 } },
-      { id: "q2a2", label: "I’m up for a course if it leads to a job", weights: { learn_first: 2 } },
-      { id: "q2a3", label: "I’m not ready yet, I need to build up", weights: { confidence: 2 } },
-      { id: "q2a4", label: "I want practical learning while I work", weights: { earn_now: 1, learn_first: 1 } }
+      { id: "q2a1", label: "I’d rather work than study", weights: { direct_employment: 2, apprenticeships: 1 } },
+      { id: "q2a2", label: "I’ll study if it leads to a job", weights: { college_training: 2, apprenticeships: 1 } },
+      { id: "q2a3", label: "I need to build up first", weights: { pre_employment: 2, volunteering: 1 } }
     ]
   },
   {
     id: "q3",
     text: "What kind of help would be most useful?",
     answers: [
-      { id: "q3a1", label: "Someone to coach me and link me to employers", weights: { help_me: 3 } },
-      { id: "q3a2", label: "A paid role with training built in", weights: { earn_now: 2 } },
-      { id: "q3a3", label: "A short programme to build skills", weights: { confidence: 2 } },
-      { id: "q3a4", label: "Clear steps into a job after a course", weights: { learn_first: 2 } },
+      { id: "q3a1", label: "Advice, coaching and links to employers", weights: { employment_support: 3 } },
+      { id: "q3a2", label: "A paid role with training built in", weights: { apprenticeships: 2, direct_employment: 1 } },
+      { id: "q3a3", label: "A short programme to build skills", weights: { pre_employment: 2 } },
+      { id: "q3a4", label: "Clear steps after a course", weights: { college_training: 2, graduate_routes: 1 } },
       { id: "q3a5", label: "Business mentoring or startup advice", weights: { self_employed: 2 } }
     ]
   },
@@ -110,17 +139,17 @@ const QUESTIONS = [
     id: "q4",
     text: "How soon do you need income?",
     answers: [
-      { id: "q4a1", label: "Right away", weights: { earn_now: 3 } },
-      { id: "q4a2", label: "Soon, after some prep", weights: { confidence: 2, earn_now: 1 } },
-      { id: "q4a3", label: "I can study first", weights: { learn_first: 2 } }
+      { id: "q4a1", label: "Right away", weights: { direct_employment: 2, apprenticeships: 2 } },
+      { id: "q4a2", label: "Soon, after some prep", weights: { pre_employment: 2, volunteering: 1 } },
+      { id: "q4a3", label: "I can study first", weights: { college_training: 2, graduate_routes: 1 } }
     ]
   },
   {
     id: "q5",
     text: "Do you have an EHCP or think you may need workplace support?",
     answers: [
-      { id: "q5a1", label: "Yes", weights: { supported: 3, help_me: 1 } },
-      { id: "q5a2", label: "Not sure", weights: { help_me: 2 } },
+      { id: "q5a1", label: "Yes", weights: { supported_internships: 3, employment_support: 1 } },
+      { id: "q5a2", label: "Not sure", weights: { employment_support: 2 } },
       { id: "q5a3", label: "No", weights: {} }
     ]
   },
@@ -128,11 +157,11 @@ const QUESTIONS = [
     id: "q6",
     text: "Which sounds closest to you?",
     answers: [
-      { id: "q6a1", label: "I want to apply for jobs now", weights: { earn_now: 2 } },
-      { id: "q6a2", label: "I want to earn and learn", weights: { earn_now: 1, learn_first: 1 } },
-      { id: "q6a3", label: "I want to study a course that leads to work", weights: { learn_first: 2 } },
-      { id: "q6a4", label: "I need confidence and experience first", weights: { confidence: 2 } },
-      { id: "q6a5", label: "I want to be self-employed or freelance", weights: { self_employed: 2 } }
+      { id: "q6a1", label: "Apply for jobs now", weights: { direct_employment: 2 } },
+      { id: "q6a2", label: "Earn and learn", weights: { apprenticeships: 2 } },
+      { id: "q6a3", label: "Study a course that leads to work", weights: { college_training: 2 } },
+      { id: "q6a4", label: "Build confidence and experience", weights: { pre_employment: 1, volunteering: 1 } },
+      { id: "q6a5", label: "Be self-employed or freelance", weights: { self_employed: 2 } }
     ]
   }
 ];
@@ -245,9 +274,7 @@ const QUESTIONS = [
     });
 
     // Sort outcomes
-    const sorted = Object.entries(scores)
-      .sort((a,b) => b[1] - a[1]);
-
+    const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
     const top = sorted[0];
     const second = sorted[1];
     const showSecond = second && (top[1] - second[1] <= 2);
@@ -264,8 +291,7 @@ const QUESTIONS = [
     stepWrap.replaceChildren();
 
     const results = el("div", { class: "sc-results" });
-    results.append(renderResultCard(top[0]));
-
+    if (top) results.append(renderResultCard(top[0]));
     if (showSecond) results.append(renderResultCard(second[0]));
 
     // “Why these results?”
@@ -300,11 +326,12 @@ const QUESTIONS = [
     const h = el("h3", {}, data.title);
     const p = el("p", {}, data.summary);
     const links = el("div", { class: "sc-links" });
-    data.links.forEach(l => {
+    (data.links || []).forEach(l => {
       const a = el("a", { class:"sc-link", href:l.href }, l.text);
       links.append(a);
     });
-    wrap.append(h, p, links);
+    wrap.append(h, p);
+    if ((data.links || []).length) wrap.append(links);
     return wrap;
   }
 
