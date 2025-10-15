@@ -23,7 +23,7 @@
   --white:#fff;
   --tp:transparent;
 
-  --radius:0px;
+  --radius:12px;
   --space-1:0.5rem;
   --space-2:0.75rem;
   --space-3:1rem;
@@ -87,7 +87,13 @@ html,body{
 .sc-option:hover{ border-color:var(--primary); }
 .sc-option:has(input:focus-visible){ outline:var(--focus); outline-offset:2px; }
 
-.sc-actions{ display:flex; gap:var(--space-2); margin-top:var(--space-3); }
+.sc-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--space-2);
+  align-items:center;
+}
+
 .sc-btn{
   appearance:none; border:0; cursor:pointer;
   border-radius:var(--radius);
@@ -103,6 +109,17 @@ html,body{
   color:var(--grey5);
 }
 .sc-btn[disabled]{ opacity:.6; cursor:not-allowed; }
+
+/* Plain text, low-hierarchy link under the buttons */
+.sc-readall{
+  display:block;
+  width:100%;
+  margin-top:var(--space-1);
+  font-size:1rem;
+  color:var(--col4);
+  text-decoration:underline;
+}
+.sc-readall:focus-visible{ outline:var(--focus); outline-offset:2px; }
 
 .sc-progress{
   margin:0 0 var(--space-3);

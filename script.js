@@ -1,5 +1,5 @@
 /* Minimal, accessible, weighted quiz for Skills Connect.
-   Adds 'Not sure' and 'Skip' without affecting scoring. */
+   Adds 'Not sure' and 'Skip'. Plain text "Read about all your options" link under buttons. */
 
 // ---- Config
 const READ_ALL_URL = "https://www.skillsconnect.org.uk/find-your-direction/pathways-to-work#list";
@@ -20,10 +20,7 @@ const OUTCOMES = {
     summary:
       "Some people are ready to go straight into work. They can apply for entry-level jobs that don’t always need lots of qualifications, like retail, hospitality, customer service, or warehouse work. These jobs help them build experience and transferable skills.",
     links: [
-      {
-        text: "Entry-level opportunities",
-        href: "https://www.skillsconnect.org.uk/entry-level-opportunities/"
-      }
+      { text: "Entry-level opportunities", href: "https://www.skillsconnect.org.uk/entry-level-opportunities/" }
     ],
     accent: "var(--col12)"
   },
@@ -32,10 +29,7 @@ const OUTCOMES = {
     summary:
       "An apprenticeship means learning on the job while also studying towards a qualification.\n\nThey’re paid, so you can earn while you learn. Apprenticeships are available in almost every sector from construction, health and care, digital, business, creative industries, and more.",
     links: [
-      {
-        text: "Apprenticeship levels",
-        href: "https://www.skillsconnect.org.uk/apprenticeships/#levels"
-      }
+      { text: "Apprenticeship levels", href: "https://www.skillsconnect.org.uk/apprenticeships/#levels" }
     ],
     accent: "var(--col5)"
   },
@@ -51,10 +45,7 @@ const OUTCOMES = {
     summary:
       "For young people with additional needs, supported internships combine work placements with extra help from a job coach or mentor. They’re designed to make the transition into paid work smoother and more achievable.",
     links: [
-      {
-        text: "Guide to supported internships",
-        href: "https://www.skillsconnect.org.uk/find-your-direction/internships/guide-to-supported-internships/"
-      }
+      { text: "Guide to supported internships", href: "https://www.skillsconnect.org.uk/find-your-direction/internships/guide-to-supported-internships/" }
     ],
     accent: "var(--col10)"
   },
@@ -77,10 +68,7 @@ const OUTCOMES = {
     summary:
       "For those who go on to university or higher education, graduate schemes and internships are a route into professional roles with structured training and progression.",
     links: [
-      {
-        text: "Internships",
-        href: "https://www.skillsconnect.org.uk/find-your-direction/internships/"
-      }
+      { text: "Internships", href: "https://www.skillsconnect.org.uk/find-your-direction/internships/" }
     ],
     accent: "var(--col7)"
   },
@@ -96,10 +84,7 @@ const OUTCOMES = {
     summary:
       "There are also specialist services (like Jobcentre Plus Youth Hubs, local council projects, or voluntary organisations) that provide tailored advice, coaching, and links to employers for young people struggling to find the right path.\n\nSkills Connect can also help you find work, improve your CV and prepare for interviews.",
     links: [
-      {
-        text: "Speak to Skills Connect",
-        href: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/"
-      }
+      { text: "Speak to Skills Connect", href: "https://www.skillsconnect.org.uk/contact-us/speak-to-us/" }
     ],
     accent: "var(--col13)"
   }
@@ -188,11 +173,11 @@ const QUESTIONS = [
   const backBtn = btn("Back", "secondary");
   const skipBtn = btn("Skip", "secondary");
   const nextBtn = btn("Next", "primary");
-  const readAllBtn = linkBtn("Read about all your options", READ_ALL_URL, "secondary", true);
+  const readAllInline = linkInline("Read about all your options", READ_ALL_URL);
 
   backBtn.disabled = true;
 
-  actions.append(backBtn, skipBtn, nextBtn, readAllBtn);
+  actions.append(backBtn, skipBtn, nextBtn, readAllInline);
   card.append(progress, stepWrap, actions);
   root.append(card);
 
@@ -213,9 +198,7 @@ const QUESTIONS = [
     const list = el("ul", { class: "sc-list", role: "list" });
 
     // Render normal answers
-    q.answers.forEach(a => {
-      list.append(renderOption(q, a.id, a.label));
-    });
+    q.answers.forEach(a => { list.append(renderOption(q, a.id, a.label)); });
 
     // Auto-add "Not sure" with zero weight
     const notSureId = `${q.id}_not_sure`;
@@ -226,7 +209,6 @@ const QUESTIONS = [
     // Buttons state
     backBtn.disabled = stepIndex === 0;
     nextBtn.textContent = stepIndex === QUESTIONS.length - 1 ? "See results" : "Next";
-    // If previously answered (including NOT_SURE), allow Next
     nextBtn.disabled = !(answers[q.id]);
 
     // Keyboard: Enter moves next if selection present
@@ -287,9 +269,9 @@ const QUESTIONS = [
   nextBtn.addEventListener("click", goNext);
   backBtn.addEventListener("click", goBack);
 
-  // Read all options click tracking
-  readAllBtn.addEventListener("click", () => {
-    sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "footer" });
+  // Inline read-all analytics
+  readAllInline.addEventListener("click", () => {
+    sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "inline_link" });
   });
 
   renderStep();
@@ -335,7 +317,7 @@ const QUESTIONS = [
     }).length;
 
     if (!top || answeredCount < 2) {
-      const info = el("p", {}, "Not enough answers to prioritise one route. Try reading all your options below.");
+      const info = el("p", {}, "Not enough answers to prioritise one route. Read all your options below.");
       stepWrap.append(info);
     }
 
@@ -359,21 +341,23 @@ const QUESTIONS = [
 
     stepWrap.append(results, why);
 
-    // Actions: retake + read all
+    // Actions: replace with retake + same inline read-all link
     actions.replaceChildren();
     const retake = btn("Start again", "secondary");
-    const readAll = linkBtn("Read about all your options", READ_ALL_URL, "primary", true);
+    const readAllInlineResults = linkInline("Read about all your options", READ_ALL_URL);
+
     retake.addEventListener("click", () => {
       Object.keys(answers).forEach(k => delete answers[k]);
       stepIndex = 0;
-      actions.replaceChildren(backBtn, skipBtn, nextBtn, readAllBtn);
+      actions.replaceChildren(backBtn, skipBtn, nextBtn, readAllInline);
       renderStep();
       sendAnalytics("quiz_restart", { quiz_id: quizId });
     });
-    readAll.addEventListener("click", () => {
-      sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "results" });
+    readAllInlineResults.addEventListener("click", () => {
+      sendAnalytics("quiz_read_all_click", { quiz_id: quizId, context: "inline_link_results" });
     });
-    actions.append(retake, readAll);
+
+    actions.append(retake, readAllInlineResults);
   }
 
   function renderResultCard(key){
@@ -406,9 +390,8 @@ const QUESTIONS = [
     b.addEventListener("keyup", e => { if (e.key === "Enter" || e.key === " ") b.click(); });
     return b;
   }
-  function linkBtn(label, href, variant="secondary", newWindow=false){
-    const a = el("a", { href, class:`sc-btn sc-btn--${variant}` }, label);
-    if (newWindow) { a.setAttribute("target","_blank"); a.setAttribute("rel","noopener"); }
+  function linkInline(label, href){
+    const a = el("a", { href, class:"sc-readall", target:"_blank", rel:"noopener" }, label);
     return a;
   }
 })();
