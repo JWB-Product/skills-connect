@@ -367,7 +367,7 @@ const QUESTIONS = [
     const p = el("p", {}, data.summary);
     const links = el("div", { class: "sc-links" });
     (data.links || []).forEach(l => {
-      const a = el("a", { class:"sc-link", href:l.href }, l.text);
+      const a = el("a", { class:"sc-link", href:l.href, target:"_blank", rel:"noopener noreferrer" }, l.text);
       links.append(a);
     });
     wrap.append(h, p);
@@ -391,7 +391,8 @@ const QUESTIONS = [
     return b;
   }
   function linkInline(label, href){
-    const a = el("a", { href, class:"sc-readall", target:"_blank", rel:"noopener" }, label);
+    // Open the read-all link in a new tab and add safe rel attributes
+    const a = el("a", { href, class:"sc-readall", target:"_blank", rel:"noopener noreferrer" }, label);
     return a;
   }
 })();
